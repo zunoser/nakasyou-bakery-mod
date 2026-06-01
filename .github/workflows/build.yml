@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout
@@ -26,8 +26,75 @@ jobs:
         with:
           gradle-version: 9.5.0
 
+      - name: Resolve release version
+        id: release-version
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          latest_minor="$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq '[.[].tagName | select(test("^v1\\.[0-9]+$")) | sub("^v1\\."; "") | tonumber] | max // 0')"
+          next_minor=$((latest_minor + 1))
+          if [ "$next_minor" -lt 1 ]; then
+            next_minor=1
+          fi
+
+          version="1.${next_minor}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${version}" >> "$GITHUB_OUTPUT"
+
       - name: Build
-        run: gradle build --no-daemon
+        env:
+          RELEASE_VERSION: ${{ steps.release-version.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "$RELEASE_VERSION" ]; then
+            gradle build --no-daemon -Pmod_version="$RELEASE_VERSION"
+          else
+            gradle build --no-daemon
+          fi
+
+      - name: Prepare release jar
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        env:
+          RELEASE_VERSION: ${{ steps.release-version.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          jar_path=""
+          for candidate in build/libs/*.jar; do
+            case "$candidate" in
+              *-sources.jar) continue ;;
+            esac
+            jar_path="$candidate"
+            break
+          done
+
+          if [ -z "$jar_path" ]; then
+            echo "No release jar found in build/libs" >&2
+            exit 1
+          fi
+
+          mkdir -p build/release
+          cp "$jar_path" "build/release/nakasyou-bakery-mod-${RELEASE_VERSION}.jar"
+
+      - name: Create GitHub Release
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.release-version.outputs.version }}
+          RELEASE_TAG: ${{ steps.release-version.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          gh release create "$RELEASE_TAG" \
+            "build/release/nakasyou-bakery-mod-${RELEASE_VERSION}.jar" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Nakasyou Bakery ${RELEASE_VERSION}" \
+            --notes "Automated release for version ${RELEASE_VERSION}." \
+            --latest
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
