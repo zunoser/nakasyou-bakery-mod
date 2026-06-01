@@ -1,13 +1,18 @@
 # Nakasyou Bakery Mod
 
-Fabric server mod for Minecraft `26.1.2`.
+Minecraft `26.1.2` 向けのFabricサーバーModです。
 
-## Behavior
+## 挙動
 
-- Bread crafted by `nakasyou0` is renamed to `nakasyou bakeryのパン` and gets bakery lore.
-- Bread taken from a villager trade result slot is renamed to `Not fair trade bread` and gets not-fair-trade lore.
-- Villager-traded bread takes precedence, even when the buyer is `nakasyou0`.
+- `nakasyou0` がクラフトしたパンは `nakasyou bakeryのパン` になり、愛情たっぷりの説明文が付きます。
+- 村人取引で入手したパンは `Not fair trade bread` になり、かなり不穏な説明文が付きます。
+- `nakasyou0` 以外が作ったパンを食べると、腐肉と同じ確率で空腹になります。
+- 村人取引パンは、たとえ `nakasyou0` が買っても搾取パンとして扱われます。
 
-## GitHub Actions Artifact
+つまり最終仕様は、`nakasyou0` さんの手作りパンは愛。村人取引パンは搾取。
 
-The `Build` workflow runs `gradle build --no-daemon` and uploads `build/libs/*.jar` as the `nakasyou-bakery-mod` artifact.
+最低すぎる経済圏で草。
+
+## GitHub Actions成果物
+
+`Build` ワークフローで `gradle build --no-daemon` を実行し、`build/libs/*.jar` を `nakasyou-bakery-mod` としてアップロードします。

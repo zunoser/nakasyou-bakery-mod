@@ -6,14 +6,21 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.ItemLore;
+import net.minecraft.world.level.Level;
 
 public final class BreadTagger {
     private static final String NAKASYOU0 = "nakasyou0";
+    private static final String BAKERY_TAG = "nakasyou_bakery";
+    private static final float ROTTEN_FLESH_HUNGER_CHANCE = 0.8F;
+    private static final int ROTTEN_FLESH_HUNGER_DURATION_TICKS = 600;
 
     private BreadTagger() {
     }
@@ -24,7 +31,7 @@ public final class BreadTagger {
         }
 
         CompoundTag tag = new CompoundTag();
-        tag.putBoolean("nakasyou_bakery", true);
+        tag.putBoolean(BAKERY_TAG, true);
         tag.putString("source", "crafted");
         tag.putString("baker", NAKASYOU0);
 
@@ -51,6 +58,21 @@ public final class BreadTagger {
                 Component.literal("[Not fair trade]").withStyle(ChatFormatting.DARK_RED)
         )));
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+    }
+
+    public static void applyNonBakeryBreadEffect(Level level, LivingEntity entity, ItemStack stack) {
+        if (level.isClientSide || !(entity instanceof Player) || !isBread(stack) || isNakasyouBakeryBread(stack)) {
+            return;
+        }
+
+        if (entity.getRandom().nextFloat() < ROTTEN_FLESH_HUNGER_CHANCE) {
+            entity.addEffect(new MobEffectInstance(MobEffects.HUNGER, ROTTEN_FLESH_HUNGER_DURATION_TICKS, 0));
+        }
+    }
+
+    private static boolean isNakasyouBakeryBread(ItemStack stack) {
+        CustomData data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        return data.copyTag().getBooleanOr(BAKERY_TAG, false);
     }
 
     private static boolean isBread(ItemStack stack) {

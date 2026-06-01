@@ -4,6 +4,7 @@
   "package": "dev.nakasyou.bakery.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "ItemStackMixin",
     "MerchantResultSlotMixin",
     "ResultSlotMixin"
   ],
