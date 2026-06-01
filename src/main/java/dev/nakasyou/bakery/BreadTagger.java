@@ -6,6 +6,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -61,7 +62,7 @@ public final class BreadTagger {
     }
 
     public static void applyNonBakeryBreadEffect(Level level, LivingEntity entity, ItemStack stack) {
-        if (level.isClientSide || !(entity instanceof Player) || !isBread(stack) || isNakasyouBakeryBread(stack)) {
+        if (!(entity instanceof ServerPlayer) || !isBread(stack) || isNakasyouBakeryBread(stack)) {
             return;
         }
 
