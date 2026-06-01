@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "nakasyou-bakery",
+  "version": "${version}",
+  "name": "Nakasyou Bakery",
+  "description": "Tags nakasyou0 crafted bread as bakery bread and villager-traded bread as not fair trade.",
+  "authors": [
+    "nakasyou bakery"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.nakasyou.bakery.NakasyouBakeryMod"
+    ]
+  },
+  "mixins": [
+    "nakasyou-bakery.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "${minecraft_version}",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
