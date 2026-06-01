@@ -19,7 +19,7 @@ public final class BreadTagger {
     }
 
     public static void tagCraftedBread(Player player, ItemStack stack) {
-        if (!isBread(stack) || !NAKASYOU0.equals(player.getGameProfile().getName())) {
+        if (!isBread(stack) || !NAKASYOU0.equals(player.getName().getString())) {
             return;
         }
 
