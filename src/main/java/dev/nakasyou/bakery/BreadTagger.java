@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntityEvent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -22,6 +23,10 @@ public final class BreadTagger {
     private static final String BAKERY_TAG = "nakasyou_bakery";
     private static final float ROTTEN_FLESH_HUNGER_CHANCE = 0.8F;
     private static final int ROTTEN_FLESH_HUNGER_DURATION_TICKS = 600;
+    private static final float TOTEM_EFFECT_CHANCE = 0.2F;
+    private static final int TOTEM_REGENERATION_DURATION_TICKS = 900;
+    private static final int TOTEM_ABSORPTION_DURATION_TICKS = 100;
+    private static final int TOTEM_FIRE_RESISTANCE_DURATION_TICKS = 800;
 
     private BreadTagger() {
     }
@@ -61,11 +66,30 @@ public final class BreadTagger {
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
 
-    public static void applyNonBakeryBreadEffect(Level level, LivingEntity entity, ItemStack stack) {
-        if (!(entity instanceof ServerPlayer) || !isBread(stack) || isNakasyouBakeryBread(stack)) {
+    public static void applyEatenBreadEffect(Level level, LivingEntity entity, ItemStack stack) {
+        if (!(entity instanceof ServerPlayer) || !isBread(stack)) {
             return;
         }
 
+        if (isNakasyouBakeryBread(stack)) {
+            applyBakeryBreadTotemEffect(level, entity);
+        } else {
+            applyNonBakeryBreadHungerEffect(entity);
+        }
+    }
+
+    private static void applyBakeryBreadTotemEffect(Level level, LivingEntity entity) {
+        if (entity.getRandom().nextFloat() >= TOTEM_EFFECT_CHANCE) {
+            return;
+        }
+
+        entity.addEffect(new MobEffectInstance(MobEffects.REGENERATION, TOTEM_REGENERATION_DURATION_TICKS, 1));
+        entity.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, TOTEM_ABSORPTION_DURATION_TICKS, 1));
+        entity.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, TOTEM_FIRE_RESISTANCE_DURATION_TICKS, 0));
+        level.broadcastEntityEvent(entity, EntityEvent.PROTECTED_FROM_DEATH);
+    }
+
+    private static void applyNonBakeryBreadHungerEffect(LivingEntity entity) {
         if (entity.getRandom().nextFloat() < ROTTEN_FLESH_HUNGER_CHANCE) {
             entity.addEffect(new MobEffectInstance(MobEffects.HUNGER, ROTTEN_FLESH_HUNGER_DURATION_TICKS, 0));
         }
