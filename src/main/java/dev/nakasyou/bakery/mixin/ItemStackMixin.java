@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(ItemStack.class)
 public abstract class ItemStackMixin {
     @Inject(method = "finishUsingItem", at = @At("HEAD"))
-    private void nakasyouBakery$applyNonBakeryBreadEffect(Level level, LivingEntity entity, CallbackInfoReturnable<ItemStack> cir) {
-        BreadTagger.applyNonBakeryBreadEffect(level, entity, (ItemStack) (Object) this);
+    private void nakasyouBakery$applyEatenBreadEffect(Level level, LivingEntity entity, CallbackInfoReturnable<ItemStack> cir) {
+        BreadTagger.applyEatenBreadEffect(level, entity, (ItemStack) (Object) this);
     }
 }
