@@ -13,9 +13,6 @@
   "entrypoints": {
     "main": [
       "dev.nakasyou.bakery.NakasyouBakeryMod"
-    ],
-    "client": [
-      "dev.nakasyou.bakery.client.NakasyouBakeryClient"
     ]
   },
   "mixins": [

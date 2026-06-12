@@ -2,22 +2,26 @@ package dev.nakasyou.bakery;
 
 import java.util.List;
 
-import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import com.mojang.datafixers.util.Pair;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntityEvent;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.DeathProtection;
 import net.minecraft.world.item.component.ItemLore;
-import net.minecraft.world.level.Level;
 
 public final class BreadTagger {
     private static final String NAKASYOU0 = "nakasyou0";
@@ -28,6 +32,8 @@ public final class BreadTagger {
     private static final int TOTEM_REGENERATION_DURATION_TICKS = 900;
     private static final int TOTEM_ABSORPTION_DURATION_TICKS = 100;
     private static final int TOTEM_FIRE_RESISTANCE_DURATION_TICKS = 800;
+    private static final Identifier NAKASYOU_ICON_MODEL =
+            Identifier.fromNamespaceAndPath(NakasyouBakeryMod.MOD_ID, "nakasyou_icon");
 
     private BreadTagger() {
     }
@@ -67,37 +73,46 @@ public final class BreadTagger {
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
 
-    public static void applyEatenBreadEffect(Level level, LivingEntity entity, ItemStack stack) {
-        if (!(entity instanceof ServerPlayer) || !isBread(stack)) {
+    public static void applyEatenBreadEffect(LivingEntity entity, ItemStack stack) {
+        if (!(entity instanceof ServerPlayer player) || !isBread(stack)) {
             return;
         }
 
         if (isNakasyouBakeryBread(stack)) {
-            applyBakeryBreadTotemEffect(entity);
+            applyBakeryBreadTotemEffect(player);
         } else {
-            applyNonBakeryBreadHungerEffect(entity);
+            applyNonBakeryBreadHungerEffect(player);
         }
     }
 
-    private static void applyBakeryBreadTotemEffect(LivingEntity entity) {
-        if (entity.getRandom().nextFloat() >= TOTEM_EFFECT_CHANCE) {
+    private static void applyBakeryBreadTotemEffect(ServerPlayer player) {
+        if (player.getRandom().nextFloat() >= TOTEM_EFFECT_CHANCE) {
             return;
         }
 
-        entity.addEffect(new MobEffectInstance(MobEffects.REGENERATION, TOTEM_REGENERATION_DURATION_TICKS, 1));
-        entity.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, TOTEM_ABSORPTION_DURATION_TICKS, 1));
-        entity.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, TOTEM_FIRE_RESISTANCE_DURATION_TICKS, 0));
-        sendBakeryTotemEffect(entity);
+        player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, TOTEM_REGENERATION_DURATION_TICKS, 1));
+        player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, TOTEM_ABSORPTION_DURATION_TICKS, 1));
+        player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, TOTEM_FIRE_RESISTANCE_DURATION_TICKS, 0));
+        sendBakeryTotemEffect(player);
     }
 
-    private static void sendBakeryTotemEffect(LivingEntity entity) {
-        BakeryTotemPayload payload = new BakeryTotemPayload(entity.getId());
-        for (ServerPlayer watcher : PlayerLookup.tracking(entity)) {
-            ServerPlayNetworking.send(watcher, payload);
-        }
-        if (entity instanceof ServerPlayer self) {
-            ServerPlayNetworking.send(self, payload);
-        }
+    /**
+     * バニラクライアントは entity event 35 受信時に手元の DEATH_PROTECTION 付き
+     * アイテムを画面演出に使うため、偽の装備パケットで一瞬だけなかしょうモデルの
+     * トーテムを持たせてから演出を流し、直後に本物の装備へ戻す。
+     */
+    private static void sendBakeryTotemEffect(ServerPlayer player) {
+        ItemStack displayStack = new ItemStack(Items.TOTEM_OF_UNDYING);
+        displayStack.set(DataComponents.DEATH_PROTECTION, DeathProtection.TOTEM_OF_UNDYING);
+        displayStack.set(DataComponents.ITEM_MODEL, NAKASYOU_ICON_MODEL);
+
+        player.connection.send(new ClientboundSetEquipmentPacket(player.getId(),
+                List.of(Pair.of(EquipmentSlot.MAINHAND, displayStack))));
+        player.level().broadcastEntityEvent(player, EntityEvent.PROTECTED_FROM_DEATH);
+        // 食べ終わる前のスタックを復元するため、消費後は毎ティックの
+        // コンテナ同期が正しい状態に上書きする (ズレは 1 ティック未満)
+        player.connection.send(new ClientboundSetEquipmentPacket(player.getId(),
+                List.of(Pair.of(EquipmentSlot.MAINHAND, player.getMainHandItem().copy()))));
     }
 
     private static void applyNonBakeryBreadHungerEffect(LivingEntity entity) {
