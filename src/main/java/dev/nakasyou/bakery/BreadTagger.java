@@ -2,6 +2,8 @@ package dev.nakasyou.bakery;
 
 import java.util.List;
 
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -9,7 +11,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.EntityEvent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -72,13 +73,13 @@ public final class BreadTagger {
         }
 
         if (isNakasyouBakeryBread(stack)) {
-            applyBakeryBreadTotemEffect(level, entity);
+            applyBakeryBreadTotemEffect(entity);
         } else {
             applyNonBakeryBreadHungerEffect(entity);
         }
     }
 
-    private static void applyBakeryBreadTotemEffect(Level level, LivingEntity entity) {
+    private static void applyBakeryBreadTotemEffect(LivingEntity entity) {
         if (entity.getRandom().nextFloat() >= TOTEM_EFFECT_CHANCE) {
             return;
         }
@@ -86,7 +87,17 @@ public final class BreadTagger {
         entity.addEffect(new MobEffectInstance(MobEffects.REGENERATION, TOTEM_REGENERATION_DURATION_TICKS, 1));
         entity.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, TOTEM_ABSORPTION_DURATION_TICKS, 1));
         entity.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, TOTEM_FIRE_RESISTANCE_DURATION_TICKS, 0));
-        level.broadcastEntityEvent(entity, EntityEvent.PROTECTED_FROM_DEATH);
+        sendBakeryTotemEffect(entity);
+    }
+
+    private static void sendBakeryTotemEffect(LivingEntity entity) {
+        BakeryTotemPayload payload = new BakeryTotemPayload(entity.getId());
+        for (ServerPlayer watcher : PlayerLookup.tracking(entity)) {
+            ServerPlayNetworking.send(watcher, payload);
+        }
+        if (entity instanceof ServerPlayer self) {
+            ServerPlayNetworking.send(self, payload);
+        }
     }
 
     private static void applyNonBakeryBreadHungerEffect(LivingEntity entity) {
