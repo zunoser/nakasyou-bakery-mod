@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'src/**'
+      - 'resourcepack/**'
       - 'build.gradle'
       - 'settings.gradle'
       - 'gradle.properties'
@@ -11,6 +12,7 @@ on:
   pull_request:
     paths:
       - 'src/**'
+      - 'resourcepack/**'
       - 'build.gradle'
       - 'settings.gradle'
       - 'gradle.properties'
@@ -68,6 +70,16 @@ jobs:
             gradle build --no-daemon
           fi
 
+      - name: Build resourcepack
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        env:
+          RELEASE_VERSION: ${{ steps.release-version.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p build/release
+          (cd resourcepack && zip -r "../release/nakasyou-bakery-resourcepack-${RELEASE_VERSION}.zip" .)
+
       - name: Prepare release jar
         if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         env:
@@ -103,6 +115,7 @@ jobs:
 
           gh release create "$RELEASE_TAG" \
             "build/release/nakasyou-bakery-mod-${RELEASE_VERSION}.jar" \
+            "build/release/nakasyou-bakery-resourcepack-${RELEASE_VERSION}.zip" \
             --repo "$GITHUB_REPOSITORY" \
             --title "Nakasyou Bakery ${RELEASE_VERSION}" \
             --notes "Automated release for version ${RELEASE_VERSION}." \
@@ -112,5 +125,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nakasyou-bakery-mod
-          path: build/libs/*.jar
+          path: |
+            build/libs/*.jar
+            build/release/*.zip
           if-no-files-found: error
