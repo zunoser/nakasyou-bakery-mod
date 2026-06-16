@@ -78,7 +78,7 @@ jobs:
           set -euo pipefail
 
           mkdir -p build/release
-          (cd resourcepack && zip -r "../release/nakasyou-bakery-resourcepack-${RELEASE_VERSION}.zip" .)
+          (cd resourcepack && zip -r "../build/release/nakasyou-bakery-resourcepack-${RELEASE_VERSION}.zip" .)
 
       - name: Prepare release jar
         if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
