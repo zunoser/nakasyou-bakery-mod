@@ -93,6 +93,7 @@ public final class BreadTagger {
         player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, TOTEM_REGENERATION_DURATION_TICKS, 1));
         player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, TOTEM_ABSORPTION_DURATION_TICKS, 1));
         player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, TOTEM_FIRE_RESISTANCE_DURATION_TICKS, 0));
+        player.playSound(ModSounds.NAKASYOU_VOICE, 1.0F, 1.0F);
         sendBakeryTotemEffect(player);
     }
 

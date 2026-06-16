@@ -7,5 +7,6 @@ public final class NakasyouBakeryMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        ModSounds.init();
     }
 }

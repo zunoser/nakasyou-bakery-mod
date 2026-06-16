@@ -1,0 +1,11 @@
+{
+  "nakasyou_voice": {
+    "sounds": [
+      "nakasyou-bakery:buyuden",
+      "nakasyou-bakery:konbanwa",
+      "nakasyou-bakery:lm",
+      "nakasyou-bakery:nakamura"
+    ],
+    "subtitle": "nakasyou bakery voice"
+  }
+}
