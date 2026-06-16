@@ -5,12 +5,15 @@ import java.util.List;
 import com.mojang.datafixers.util.Pair;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityEvent;
@@ -93,7 +96,16 @@ public final class BreadTagger {
         player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, TOTEM_REGENERATION_DURATION_TICKS, 1));
         player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, TOTEM_ABSORPTION_DURATION_TICKS, 1));
         player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, TOTEM_FIRE_RESISTANCE_DURATION_TICKS, 0));
-        player.playSound(ModSounds.NAKASYOU_VOICE, 1.0F, 1.0F);
+        ClientboundSoundPacket packet = new ClientboundSoundPacket(
+                Holder.direct(ModSounds.NAKASYOU_VOICE),
+                SoundSource.PLAYERS,
+                player.getX(),
+                player.getY(),
+                player.getZ(),
+                1.0F,
+                1.0F,
+                player.getRandom().nextLong());
+        player.connection.send(packet);
         sendBakeryTotemEffect(player);
     }
 
